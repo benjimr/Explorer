@@ -215,17 +215,4 @@ public class Explorer
         return length;
         
     }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
