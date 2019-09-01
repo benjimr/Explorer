@@ -1,3 +1,12 @@
+/*
+    Authors: Ben Ryan
+             Yit Chee Chin
+             
+    This programs will control the EV3 robot seen in the README file.
+    It will avoid obstacles and keep itself from falling off the edge
+    of things.
+*/
+
 import lejos.hardware.Button;
 import lejos.hardware.Sound;
 import lejos.hardware.motor.BaseRegulatedMotor;
@@ -19,13 +28,14 @@ public class Explorer
     public static void main(String[] args) 
     {
         int angle;
-        int maxAngle = 48;
-        float forwardDist = 0.3f;
-        float reverseDist = 0.15f;
-        int reverseAngle = 40;
-        int angleSpeed = 4;
-        float circumference = (float) (2 * Math.PI * 2.75);
+        int maxAngle = 48; // for sweeping ultrasonic sensor
+        float forwardDist = 0.3f; // moving forward until this dist
+        float reverseDist = 0.15f; // backup if dist reaches this dist
+        int reverseAngle = 40; // angle to reverse at
+        int angleSpeed = 4; // degrees to sweep sensor per loop
+        float circumference = (float) (2 * Math.PI * 2.75); //wheel circumference
         
+        //general setup of inputs/outputs
         EV3TouchSensor touch = new EV3TouchSensor(SensorPort.S1);
         SampleProvider touchSP = touch.getTouchMode();
         EV3UltrasonicSensor ultrasonic = new EV3UltrasonicSensor(SensorPort.S2);
@@ -38,7 +48,6 @@ public class Explorer
         sensor4.setFloodlight(true);
         int colorSP2 = sensor4.getColorID();
         Sound.setVolume(30);
-        
         
         float [] sample = new float[distSP.sampleSize()];
 
@@ -58,15 +67,17 @@ public class Explorer
         int gLength = (int) (12 * reverseAngle * (pi/180));
         int gArc = (int)(gLength  / circumference *360);
         
-        // wait doing nothing for touch sensor to stop driving.
+        // loop until touch sensor is touched
         while(!isTouched(touchSP))
         {
+            //get inputs for this loop
             distSP.fetchSample(sample, 0);
             float dist = sample[0];
-            //System.out.println(dist);
             colorSP = sensor3.getColorID();
             colorSP2 = sensor4.getColorID();
             
+            //if no color on either sensor, sensor has gone over edge
+            //stop, backup, turn away from edge
             if (colorSP == Color.NONE || colorSP2 == Color.NONE)
             {
                 System.out.println("No color");
@@ -90,14 +101,16 @@ public class Explorer
                 left.backward();
                 Delay.msDelay(1000);  
             }
-            else if(dist > forwardDist) //forward
+            //forward, normal operation
+            else if(dist > forwardDist) 
             {
                 left.forward();
                 right.forward();
                 left.setSpeed(270);
                 right.setSpeed(270);
             }
-            else if(dist <= forwardDist && dist >= reverseDist)//turning
+            //turning away from obstacle
+            else if(dist <= forwardDist && dist >= reverseDist)
             {
                 angle = 0;
                 boolean backward = false;
@@ -105,28 +118,32 @@ public class Explorer
                 left.setSpeed(0);
                 right.setSpeed(0);
                 
+                //look for direction without obstacle by sweeping 
+                //the ultrasonic sensor mounted on the motor
                 while(dist < 0.4 && !isTouched(touchSP))
                 {
                     distSP.fetchSample(sample, 0);
                     dist = sample[0];
-                    //System.out.println(dist);
                     
+                    //sweep one way
                     if(backward == true)
                     {
                         sweep.rotate(-angleSpeed);
                         angle-=angleSpeed;
                     }
-                    else
+                    else//sweep other way
                     {
                         sweep.rotate(angleSpeed);
                         angle+=angleSpeed;
                     }
                     
+                    // when max reached in one direction swap
                     if(angle >= maxAngle)
                     {
                         backward = true;
                     }
-                    else if(angle <= -1 * maxAngle)//no path found
+                    //no path found turn 90 and search again
+                    else if(angle <= -1 * maxAngle)
                     {
                         System.out.println("No path found");
                         
@@ -144,11 +161,11 @@ public class Explorer
                     }
                 }
                 
-            
+                //calclate required speed for desired turn
                 int length = (int) (12 * angle * (pi/180));
                 int arc = (int)(length  / circumference *360);
         
-                
+                //determine which wheel should turn
                 if (angle > 0)
                 {
                     right.setSpeed(arc);
@@ -161,10 +178,12 @@ public class Explorer
                 }
                 Delay.msDelay(1000);
                             
+                //reset ultrasonic sensor orientation
                 sweep.rotate(angle * -1);
                 
             }
-            else if(dist <= reverseDist)//backwards
+            //reverse if too close to obstacle
+            else if(dist <= reverseDist)
             {
                 left.setSpeed(180);
                 right.setSpeed(180);
