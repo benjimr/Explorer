@@ -1,5 +1,7 @@
 Exploratory mobile robot designed to avoid obstacles and keep itself from falling off things using Lego Mindstorms EV3.
 
+![Explorer](https://i.imgur.com/87Om8Rf.png "Explorer")
+
 ### Obstacle Avoidance
 The robot uses an ultrasonic sensor to measure distance to obstacles. The sensor is mounted to a motor. Upon detecting an obstacle in its path, it will stop and use the motor to sweep the ultrasonic sensor back and forth 48° either direction. (This angle was found to be the maximum angle due to a mechanical constraint to avoid detecting itself as an obstacle). Upon finding a direction in which there is no obstacle, the ultrasonic sensor will be reset to pointing forward, then an algorithm will be executed to find the variables required to turn the robot to the angle found using the two motors attached to the wheels. 
 
